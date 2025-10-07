@@ -29,32 +29,19 @@ def send_line(conn, text):
 
 
 def broadcast_room(room, text, exclude=None):
-    """Envía `text` a todos los miembros de `room` (excepto `exclude`).
-
-    El mensaje se envía con el prefijo "[room] " para que los clientes puedan
-    identificar de qué sala proviene y actualizar correctamente los contadores
-    de no leídos.
-    """
-    prefixed = text
-    tag = f"[{room}]"
-    if not text.startswith(tag):
-        prefixed = f"{tag} {text}"
-
     with rooms_lock:
         members = [
             username
             for username in rooms.get(room, {}).get('members', set())
-            if username != exclude
+            if username != exclude and user_rooms.get(username, 'global') == room
         ]
-
     targets = []
     with clients_lock:
         for username in members:
             conn = clients.get(username)
             if conn:
                 targets.append(conn)
-
-    data = (prefixed + "\n").encode('utf-8')
+    data = (text + "\n").encode('utf-8')
     for conn in targets:
         try:
             conn.sendall(data)
