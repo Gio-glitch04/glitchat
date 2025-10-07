@@ -18,6 +18,7 @@ import socket
 import threading
 import time
 import json
+import shlex
 import tkinter as tk
 from tkinter import ttk, scrolledtext, messagebox, simpledialog
 
@@ -42,7 +43,13 @@ def ensure_history_dir():
 
 def history_path(room):
     ensure_history_dir()
-    safe = "".join(c for c in room if c.isalnum() or c in ('_', '-', '.'))
+    safe_chars = []
+    for char in room:
+        if char.isalnum() or char in ('_', '-', '.'):
+            safe_chars.append(char)
+        elif char.isspace():
+            safe_chars.append('_')
+    safe = ''.join(safe_chars) or 'room'
     return os.path.join(HISTORY_DIR, f"{safe}.txt")
 
 def load_servers():
@@ -460,7 +467,7 @@ class ChatClient:
             room = self.pending_join_room or self.current_room
             pwd = simpledialog.askstring("Contraseña requerida", f"Ingrese contraseña para la sala '{room}':", show="*")
             if pwd:
-                self._send_raw(f"/join {room} {pwd}")
+                self._send_raw(self._format_join_command(room, pwd))
             else:
                 self._append_local(f"[{now_ts()}] No se ingresó contraseña. No se unió a '{room}'.", room=self.current_room)
             return
@@ -485,7 +492,12 @@ class ChatClient:
         if text.startswith('/'):
             # Comandos
             if text.lower().startswith('/join'):
-                parts = text.split()
+                try:
+                    parts = shlex.split(text)
+                except ValueError as err:
+                    self._append_local(f"[Sistema] Error en comando /join: {err}")
+                    self.msg_entry.delete(0, 'end')
+                    return
                 if len(parts) < 2:
                     self._append_local("[Sistema] Uso: /join <sala> [password]")
                 else:
@@ -520,15 +532,18 @@ class ChatClient:
         except Exception as e:
             self._append_local(f"[{now_ts()}] Error al enviar comando: {e}", room=self.current_room)
 
+    def _format_join_command(self, room, pwd=None):
+        parts = ["/join", shlex.quote(room)]
+        if pwd:
+            parts.append(shlex.quote(pwd))
+        return " ".join(parts)
+
     def join_room(self, room, pwd=None, silent=False):
         """/join room [pwd]. Guarda pending_join_room para reintento de contraseña si aplica."""
         if not room:
             return
         self.pending_join_room = room
-        if pwd:
-            cmd = f"/join {room} {pwd}"
-        else:
-            cmd = f"/join {room}"
+        cmd = self._format_join_command(room, pwd)
         if not silent:
             self._append_local(f"[{now_ts()}] Intentando unirse a '{room}'...", room=self.current_room)
         self._send_raw(cmd)
