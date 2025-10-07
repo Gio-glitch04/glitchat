@@ -37,20 +37,32 @@ LOAD_CHUNK = 100              # Líneas por “paginado” al hacer scroll arrib
 def now_ts():
     return time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
 
-def ensure_history_dir():
-    if not os.path.exists(HISTORY_DIR):
-        os.makedirs(HISTORY_DIR, exist_ok=True)
+def ensure_history_dir(path=None):
+    target = HISTORY_DIR if path is None else path
+    if not os.path.exists(target):
+        os.makedirs(target, exist_ok=True)
 
-def history_path(room):
-    ensure_history_dir()
+
+def _sanitize_name(name, fallback):
     safe_chars = []
-    for char in room:
-        if char.isalnum() or char in ('_', '-', '.'):
+    for char in name:
+        if char.isalnum() or char in ('_', '-', '.', '@'):
             safe_chars.append(char)
         elif char.isspace():
             safe_chars.append('_')
-    safe = ''.join(safe_chars) or 'room'
-    return os.path.join(HISTORY_DIR, f"{safe}.txt")
+        else:
+            safe_chars.append('_')
+    safe = ''.join(safe_chars).strip('_')
+    return safe or fallback
+
+
+def history_path(room, server_key='default'):
+    ensure_history_dir()
+    safe_server = _sanitize_name(server_key, 'default')
+    server_dir = os.path.join(HISTORY_DIR, safe_server)
+    ensure_history_dir(server_dir)
+    safe_room = _sanitize_name(room, 'room')
+    return os.path.join(server_dir, f"{safe_room}.txt")
 
 def load_servers():
     if not os.path.exists(SERVER_FILE):
@@ -88,9 +100,9 @@ def head_chunk(filepath, start_index, chunk):
     new_start = max(0, start_index - chunk)
     return lines[new_start:start_index], new_start
 
-def append_history_line(room, line):
+def append_history_line(room, line, server_key='default'):
     """Agrega una línea al archivo de historial de la sala."""
-    path = history_path(room)
+    path = history_path(room, server_key)
     with open(path, 'a', encoding='utf-8') as f:
         if not line.endswith('\n'):
             line += '\n'
@@ -110,6 +122,7 @@ class ChatClient:
         self.listener_thread = None
         self.running = False
         self.username = None
+        self.server_key = 'default'
 
         self.current_room = 'global'                # sala activa
         self.visited_rooms = set(['global'])        # salas visitadas (modelo: 1 sala activa a la vez)
@@ -283,14 +296,14 @@ class ChatClient:
         if room == 'global':
             messagebox.showinfo("Info", "No podés salir de la sala global.")
             return
-        # El servidor solo permite salir de la sala ACTUAL, así que nos movemos a ella si hace falta
-        if room != self.current_room:
-            self.join_room(room, silent=True)
-        self._send_raw("/leave")
+        if room == self.current_room:
+            self._send_raw("/leave")
+        else:
+            self._send_raw(self._format_leave_command(room))
 
     # ----------------- Historial (persistente + scroll infinito) -----------------
     def load_room_history_initial(self, room):
-        path = history_path(room)
+        path = history_path(room, self.server_key)
         lines, start_idx = tail_lines(path, LOAD_CHUNK)
         self.history_index[room] = {'start_index': start_idx}
         self.chat_area.configure(state='normal')
@@ -318,7 +331,7 @@ class ChatClient:
         start_idx = idx_info.get('start_index', 0)
         if start_idx == 0:
             return  # no hay más
-        path = history_path(room)
+        path = history_path(room, self.server_key)
         more_lines, new_start = head_chunk(path, start_idx, LOAD_CHUNK)
         if not more_lines:
             return
@@ -358,12 +371,19 @@ class ChatClient:
             self.sock = s
             self.username = username
             self.running = True
+            self.server_key = self._build_server_key(host, port)
+            self.history_index = {}
+            self.room_passwords = {}
+            self.pending_join_room = None
+            self.pending_join_password = None
+            self.public_rooms_cache = []
             self.connect_btn.configure(state='disabled')
             self.send_btn.configure(state='normal')
 
             # Estado UI inicial
             self.current_room = 'global'
             self.visited_rooms = set(['global'])
+            self.sidebar_mode = 'joined'
             self.active_room_var.set("Sala activa: global")
             self.load_room_history_initial('global')
             self._append_local(f"[{now_ts()}] Conectado a {host}:{port} como {username}", room='global')
@@ -468,14 +488,28 @@ class ChatClient:
                 room = line[start:end]
             except Exception:
                 room = None
-            self.current_room = 'global'
-            self.visited_rooms.add('global')
+            previous_room = self.current_room
+            new_active = self.current_room
+            try:
+                fragment = line.split("Sala activa:", 1)[1]
+                new_active = fragment.strip()
+                if new_active.endswith('.'):
+                    new_active = new_active[:-1]
+                new_active = new_active.strip()
+            except Exception:
+                new_active = 'global'
+            if not new_active:
+                new_active = 'global'
+            self.current_room = new_active
+            self.visited_rooms.add(new_active)
             if room:
                 self.visited_rooms.discard(room)
-            self.active_room_var.set("Sala activa: global")
-            self.load_room_history_initial('global')
+                self.history_index.pop(room, None)
+            self.active_room_var.set(f"Sala activa: {new_active}")
+            if previous_room != new_active:
+                self.load_room_history_initial(new_active)
             self.refresh_sidebar()
-            self._append_local(f"[{now_ts()}] {line}", room='global')
+            self._append_local(f"[{now_ts()}] {line}", room=new_active)
             return
 
         # Volver a global / no dejar salir de global
@@ -534,7 +568,7 @@ class ChatClient:
                     pwd = parts[2] if len(parts) > 2 else None
                     self.join_room(room, pwd)
             elif text.lower().startswith('/leave'):
-                self._send_raw("/leave")
+                self._send_raw(text)
             elif text.lower().startswith('/rooms'):
                 self.request_rooms()
             elif text.lower().startswith('/quitar'):
@@ -567,6 +601,12 @@ class ChatClient:
             parts.append(shlex.quote(pwd))
         return " ".join(parts)
 
+    def _format_leave_command(self, room):
+        return "/leave " + shlex.quote(room)
+
+    def _build_server_key(self, host, port):
+        return f"{host}:{port}"
+
     def join_room(self, room, pwd=None, silent=False):
         """/join room [pwd]. Guarda pending_join_room para reintento de contraseña si aplica."""
         if not room:
@@ -574,7 +614,8 @@ class ChatClient:
         stored_pwd = self.room_passwords.get(room)
         effective_pwd = pwd if pwd not in (None, '') else stored_pwd
         self.pending_join_room = room
-        cmd = self._format_join_command(room, pwd)
+        self.pending_join_password = effective_pwd
+        cmd = self._format_join_command(room, effective_pwd)
         if not silent:
             self._append_local(f"[{now_ts()}] Intentando unirse a '{room}'...", room=self.current_room)
         self._send_raw(cmd)
@@ -625,7 +666,7 @@ class ChatClient:
     def _append_local(self, text, room=None):
         """Escribe en histórico (archivo) y muestra en pantalla si es la sala activa."""
         room = room or self.current_room
-        append_history_line(room, text)
+        append_history_line(room, text, self.server_key)
         if room == self.current_room:
             self.chat_area.configure(state='normal')
             self.chat_area.insert('end', text + '\n')
