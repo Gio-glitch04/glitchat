@@ -251,20 +251,57 @@ class ChatClient:
         self.unread_counts.setdefault(room, 0)
 
     def _parse_room_from_message(self, line):
+        """Intenta inferir la sala a partir del texto recibido.
+
+        El servidor actual envía mensajes en texto plano y el cliente
+        antepone una marca temporal ("[HH:MM:SS]"). Nos basamos en el
+        formato que usa client_v2.py: los mensajes de sala suelen venir
+        como "[sala] user: texto". Aquí limpiamos el timestamp y buscamos
+        etiquetas conocidas de sala. Si no se puede determinar, devolvemos
+        None.
+        """
         if not line:
             return None
-        if line.startswith('['):
-            closing = line.find(']')
+
+        text = line.strip()
+
+        # Quitar prefijo de timestamp (p.ej. "[2024-05-01 12:00:00]")
+        if text.startswith('['):
+            closing = text.find(']')
             if closing != -1:
-                candidate = line[1:closing].strip()
-                if candidate:
+                text = text[closing + 1 :].lstrip()
+
+        if not text:
+            return None
+
+        # Buscar la siguiente etiqueta entre corchetes "[sala]"
+        search_start = 0
+        while True:
+            open_idx = text.find('[', search_start)
+            if open_idx == -1:
+                break
+            close_idx = text.find(']', open_idx + 1)
+            if close_idx == -1:
+                break
+            candidate = text[open_idx + 1 : close_idx].strip()
+            if candidate:
+                # Evitar tags genéricos como "Sistema"
+                lowered = candidate.lower()
+                if lowered not in {'sistema', 'info', 'información', 'sistema:'}:
+                    for known in list(self.unread_counts.keys()) + list(self.visited_rooms):
+                        if known.lower() == lowered:
+                            return known
                     return candidate
+            search_start = close_idx + 1
+
+        # Último recurso: detectar separadores comunes ("sala :: mensaje")
         for sep in ('::', '|', '>'):
-            if sep in line:
-                left, right = line.split(sep, 1)
+            if sep in text:
+                left, right = text.split(sep, 1)
                 candidate = left.strip()
                 if candidate and ':' in right:
                     return candidate
+
         return None
 
     def _maybe_notify(self, room):
@@ -276,7 +313,9 @@ class ChatClient:
         played = False
         try:
             import winsound  # type: ignore
-            winsound.MessageBeep(winsound.MB_ICONASTERISK)
+
+            # Tonito corto y suave para evitar molestias
+            winsound.Beep(1046, 120)
             played = True
         except Exception:
             played = False
