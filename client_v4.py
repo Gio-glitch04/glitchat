@@ -244,16 +244,47 @@ class ChatClient:
                     return base
         return t
 
+    def _ensure_room_entry(self, room):
+        if not room:
+            return
+        self.visited_rooms.add(room)
+        self.unread_counts.setdefault(room, 0)
+
+    def _parse_room_from_message(self, line):
+        if not line:
+            return None
+        if line.startswith('['):
+            closing = line.find(']')
+            if closing != -1:
+                candidate = line[1:closing].strip()
+                if candidate:
+                    return candidate
+        for sep in ('::', '|', '>'):
+            if sep in line:
+                left, right = line.split(sep, 1)
+                candidate = left.strip()
+                if candidate and ':' in right:
+                    return candidate
+        return None
+
     def _maybe_notify(self, room):
         if room == self.current_room:
             return
         now = time.time()
         if now - self.last_notification_time < 1.5:
             return
+        played = False
         try:
-            self.master.bell()
+            import winsound  # type: ignore
+            winsound.MessageBeep(winsound.MB_ICONASTERISK)
+            played = True
         except Exception:
-            pass
+            played = False
+        if not played:
+            try:
+                self.master.bell()
+            except Exception:
+                pass
         self.last_notification_time = now
 
     def refresh_sidebar(self):
@@ -583,7 +614,13 @@ class ChatClient:
 
         # Mensaje típico "usuario: mensaje" (de otros)
         if ':' in line:
-            self._append_local(f"[{now_ts()}] {line}", room=self.current_room, notify=True)
+            target_room = self._parse_room_from_message(line)
+            if target_room:
+                self._ensure_room_entry(target_room)
+            else:
+                target_room = self.current_room
+            notify = target_room != self.current_room
+            self._append_local(f"[{now_ts()}] {line}", room=target_room, notify=notify)
             return
 
         # Otros textos informativos
@@ -714,8 +751,12 @@ class ChatClient:
         """Escribe en histórico y actualiza notificaciones según la sala."""
         room = room or self.current_room
         append_history_line(room, text, self.server_key)
-        self.unread_counts.setdefault(room, 0)
+        self._ensure_room_entry(room)
         if room == self.current_room:
+            if self.unread_counts.get(room):
+                self.unread_counts[room] = 0
+                if self.sidebar_mode == 'joined':
+                    self.refresh_sidebar()
             self.chat_area.configure(state='normal')
             self.chat_area.insert('end', text + '\n')
             self.chat_area.see('end')
