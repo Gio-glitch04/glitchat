@@ -115,6 +115,7 @@ class ChatClient:
         self.visited_rooms = set(['global'])        # salas visitadas (modelo: 1 sala activa a la vez)
         self.sidebar_mode = 'joined'                # 'joined' o 'public_list'
         self.public_rooms_cache = []                # [(name, empty_bool), ...]
+        self.room_passwords = {}                    # sala -> contraseña recordada
 
         # Historial por sala (solo índices para scroll infinito)
         # room -> {'start_index': int}
@@ -122,6 +123,7 @@ class ChatClient:
 
         # Track de unión pendiente para reintentar password si hace falta
         self.pending_join_room = None
+        self.pending_join_password = None
 
         # ----------------- UI TOP -----------------
         top = tk.Frame(master)
@@ -447,8 +449,33 @@ class ChatClient:
                 self.active_room_var.set(f"Sala activa: {room}")
                 self.load_room_history_initial(room)
                 self.refresh_sidebar()
+                if self.pending_join_password is not None:
+                    if self.pending_join_password:
+                        self.room_passwords[room] = self.pending_join_password
+                    else:
+                        self.room_passwords.pop(room, None)
                 self.pending_join_room = None  # unión exitosa
+                self.pending_join_password = None
             self._append_local(f"[{now_ts()}] {line}", room=self.current_room)
+            return
+
+        # Confirmación de abandono de sala (volver a global)
+        if "Has salido de la sala" in line and "Sala activa" in line:
+            room = None
+            try:
+                start = line.index("'") + 1
+                end = line.index("'", start)
+                room = line[start:end]
+            except Exception:
+                room = None
+            self.current_room = 'global'
+            self.visited_rooms.add('global')
+            if room:
+                self.visited_rooms.discard(room)
+            self.active_room_var.set("Sala activa: global")
+            self.load_room_history_initial('global')
+            self.refresh_sidebar()
+            self._append_local(f"[{now_ts()}] {line}", room='global')
             return
 
         # Volver a global / no dejar salir de global
@@ -465,6 +492,8 @@ class ChatClient:
         if "❌ Contraseña incorrecta" in line:
             # Intentar usar la última sala pendiente si hay
             room = self.pending_join_room or self.current_room
+            if room:
+                self.room_passwords.pop(room, None)
             pwd = simpledialog.askstring("Contraseña requerida", f"Ingrese contraseña para la sala '{room}':", show="*")
             if pwd:
                 self._send_raw(self._format_join_command(room, pwd))
@@ -542,6 +571,8 @@ class ChatClient:
         """/join room [pwd]. Guarda pending_join_room para reintento de contraseña si aplica."""
         if not room:
             return
+        stored_pwd = self.room_passwords.get(room)
+        effective_pwd = pwd if pwd not in (None, '') else stored_pwd
         self.pending_join_room = room
         cmd = self._format_join_command(room, pwd)
         if not silent:
