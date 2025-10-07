@@ -230,7 +230,7 @@ class ChatClient:
     # ----------------- Sidebar helpers -----------------
     def _format_room_display(self, room):
         count = self.unread_counts.get(room, 0)
-        return f"{room} ({count})" if count > 0 else room
+        return f"{room} ({count})"
 
     def _extract_room_from_sidebar_text(self, text):
         t = text.strip()
@@ -662,7 +662,14 @@ class ChatClient:
             self._append_local(f"[{now_ts()}] {line}", room=target_room, notify=notify)
             return
 
-        # Otros textos informativos
+        # Otros textos informativos: intentar detectar sala destino
+        inferred_room = self._parse_room_from_message(line)
+        if inferred_room:
+            self._ensure_room_entry(inferred_room)
+            notify = inferred_room != self.current_room
+            self._append_local(f"[{now_ts()}] {line}", room=inferred_room, notify=notify)
+            return
+
         self._append_local(f"[{now_ts()}] {line}", room=self.current_room)
 
     # ----------------- Envío de mensajes y comandos -----------------
