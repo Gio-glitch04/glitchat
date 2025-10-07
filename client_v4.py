@@ -497,7 +497,6 @@ class ChatClient:
             pwd = simpledialog.askstring("Contraseña requerida", f"Ingrese contraseña para la sala '{room}':", show="*")
             if pwd:
                 self._send_raw(self._format_join_command(room, pwd))
-                self.pending_join_password = pwd
             else:
                 self._append_local(f"[{now_ts()}] No se ingresó contraseña. No se unió a '{room}'.", room=self.current_room)
             return
@@ -575,8 +574,7 @@ class ChatClient:
         stored_pwd = self.room_passwords.get(room)
         effective_pwd = pwd if pwd not in (None, '') else stored_pwd
         self.pending_join_room = room
-        self.pending_join_password = effective_pwd
-        cmd = self._format_join_command(room, effective_pwd)
+        cmd = self._format_join_command(room, pwd)
         if not silent:
             self._append_local(f"[{now_ts()}] Intentando unirse a '{room}'...", room=self.current_room)
         self._send_raw(cmd)

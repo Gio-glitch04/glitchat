@@ -13,8 +13,7 @@ clients_lock = threading.Lock()
 
 rooms = {'global': {'members': set(), 'password': None}}
 rooms_lock = threading.Lock()
-user_active_room = {}     # username -> sala activa
-user_joined_rooms = {}    # username -> set de salas en las que está unido
+user_rooms = {}  # username -> current room
 
 
 class DisconnectRequested(Exception):
@@ -30,17 +29,11 @@ def send_line(conn, text):
 
 def broadcast_room(room, text, exclude=None):
     with rooms_lock:
-        info = rooms.get(room)
-        if not info:
-            return
-        members = list(info.get('members', set()))
-        active_snapshot = {username: user_active_room.get(username, 'global') for username in members}
+        members = list(rooms.get(room, {}).get('members', set()))
     targets = []
     with clients_lock:
         for username in members:
             if username == exclude:
-                continue
-            if active_snapshot.get(username) != room:
                 continue
             conn = clients.get(username)
             if conn:
@@ -62,36 +55,22 @@ def handle_join_command(username, conn, room, password):
         info = rooms.get(room)
         if info:
             stored_pwd = info.get('password')
-            if stored_pwd and username not in info['members']:
+            if stored_pwd:
                 if password is None or password != stored_pwd:
                     send_line(conn, "❌ Contraseña incorrecta.")
                     return
         else:
             rooms[room] = {'members': set(), 'password': password if password else None}
-            info = rooms[room]
-        info['members'].add(username)
-        joined = user_joined_rooms.setdefault(username, set())
-        new_membership = room not in joined
-        joined.add(room)
-        user_active_room[username] = room
-    if new_membership:
-        broadcast_room(room, f"🔔 {username} se ha unido a la sala '{room}'.", exclude=username)
-    send_line(conn, f"✅ Te has unido a la sala '{room}'.")
+    move_user_to_room(username, conn, room, success_message=f"✅ Te has unido a la sala '{room}'.")
 
 
 def handle_leave_command(username, conn):
     with rooms_lock:
-        current = user_active_room.get(username, 'global')
-        if current == 'global':
-            send_line(conn, "No puedes salir del chat global.")
-            return
-        info = rooms.setdefault(current, {'members': set(), 'password': None})
-        info['members'].discard(username)
-        joined = user_joined_rooms.setdefault(username, set())
-        joined.discard(current)
-        user_active_room[username] = 'global'
-    send_line(conn, f"✅ Has salido de la sala '{current}'. Sala activa: 'global'.")
-    broadcast_room(current, f"ℹ️ {username} ha salido de la sala '{current}'.", exclude=username)
+        current = user_rooms.get(username, 'global')
+    if current == 'global':
+        send_line(conn, "No puedes salir del chat global.")
+        return
+    move_user_to_room(username, conn, 'global', success_message='Has vuelto al chat global.')
 
 
 def handle_rooms_command(conn):
@@ -108,8 +87,31 @@ def handle_rooms_command(conn):
 
 def handle_message(username, text):
     with rooms_lock:
-        room = user_active_room.get(username, 'global')
+        room = user_rooms.get(username, 'global')
     broadcast_room(room, f"{username}: {text}", exclude=username)
+
+
+def move_user_to_room(username, conn, new_room, success_message=None):
+    with rooms_lock:
+        current = user_rooms.get(username, 'global')
+        if current == new_room:
+            if success_message:
+                send_line(conn, success_message)
+            else:
+                send_line(conn, f"ℹ️ Ya estás en la sala '{new_room}'.")
+            return
+        rooms.setdefault(current, {'members': set(), 'password': None})
+        rooms[current]['members'].discard(username)
+        rooms.setdefault(new_room, {'members': set(), 'password': None})
+        rooms[new_room]['members'].add(username)
+        user_rooms[username] = new_room
+    if current:
+        broadcast_room(current, f"ℹ️ {username} ha salido de la sala '{current}'.", exclude=username)
+    if success_message:
+        send_line(conn, success_message)
+    else:
+        send_line(conn, f"✅ Te has unido a la sala '{new_room}'.")
+    broadcast_room(new_room, f"🔔 {username} se ha unido a la sala '{new_room}'.", exclude=username)
 
 
 def parse_command(line):
@@ -144,19 +146,14 @@ def handle_command(username, conn, line):
 
 
 def cleanup_user(username):
-    to_notify = []
     with rooms_lock:
-        joined = user_joined_rooms.pop(username, set())
-        user_active_room.pop(username, None)
-        for room in joined:
-            info = rooms.get(room)
-            if info and username in info['members']:
-                info['members'].discard(username)
-                to_notify.append(room)
+        current = user_rooms.pop(username, None)
+        if current and current in rooms:
+            rooms[current]['members'].discard(username)
     with clients_lock:
         clients.pop(username, None)
-    for room in to_notify:
-        broadcast_room(room, f"ℹ️ {username} se ha desconectado de la sala '{room}'.", exclude=username)
+    if current:
+        broadcast_room(current, f"ℹ️ {username} se ha desconectado de la sala '{current}'.", exclude=username)
 
 
 def handle_client(conn, addr):
@@ -183,8 +180,7 @@ def handle_client(conn, addr):
         with rooms_lock:
             rooms.setdefault('global', {'members': set(), 'password': None})
             rooms['global']['members'].add(username)
-            user_active_room[username] = 'global'
-            user_joined_rooms[username] = set(['global'])
+            user_rooms[username] = 'global'
         send_line(conn, f"✅ Bienvenido {username}. Estás en 'global'.")
         broadcast_room('global', f"ℹ️ {username} se ha unido al chat global.", exclude=username)
 
