@@ -129,6 +129,8 @@ class ChatClient:
         self.sidebar_mode = 'joined'                # 'joined' o 'public_list'
         self.public_rooms_cache = []                # [(name, empty_bool), ...]
         self.room_passwords = {}                    # sala -> contraseña recordada
+        self.unread_counts = {'global': 0}          # sala -> mensajes no leídos
+        self.last_notification_time = 0             # para limitar sonidos de aviso
 
         # Historial por sala (solo índices para scroll infinito)
         # room -> {'start_index': int}
@@ -226,6 +228,34 @@ class ChatClient:
         master.protocol("WM_DELETE_WINDOW", self.on_close)
 
     # ----------------- Sidebar helpers -----------------
+    def _format_room_display(self, room):
+        count = self.unread_counts.get(room, 0)
+        return f"{room} ({count})" if count > 0 else room
+
+    def _extract_room_from_sidebar_text(self, text):
+        t = text.strip()
+        if t.startswith("• ") or t.startswith("  "):
+            t = t[2:]
+        if ' (' in t and t.endswith(')'):
+            base, suffix = t.rsplit(' (', 1)
+            if suffix.endswith(')'):
+                num = suffix[:-1]
+                if num.isdigit():
+                    return base
+        return t
+
+    def _maybe_notify(self, room):
+        if room == self.current_room:
+            return
+        now = time.time()
+        if now - self.last_notification_time < 1.5:
+            return
+        try:
+            self.master.bell()
+        except Exception:
+            pass
+        self.last_notification_time = now
+
     def refresh_sidebar(self):
         self.rooms_listbox.delete(0, 'end')
         if self.sidebar_mode == 'joined':
@@ -237,7 +267,15 @@ class ChatClient:
             items.extend(others)
             for r in items:
                 prefix = "• " if r == self.current_room else "  "
-                self.rooms_listbox.insert('end', f"{prefix}{r}")
+                display = self._format_room_display(r)
+                idx = self.rooms_listbox.size()
+                self.rooms_listbox.insert('end', f"{prefix}{display}")
+                if r == self.current_room:
+                    self.rooms_listbox.itemconfig(idx, fg='blue')
+                elif self.unread_counts.get(r, 0) > 0:
+                    self.rooms_listbox.itemconfig(idx, fg='red')
+                else:
+                    self.rooms_listbox.itemconfig(idx, fg='black')
         else:
             self.sidebar_title_var.set("Salas públicas (doble clic para unirse)")
             if not self.public_rooms_cache:
@@ -266,7 +304,7 @@ class ChatClient:
             return
         text = self.rooms_listbox.get(sel[0]).strip()
         if self.sidebar_mode == 'joined':
-            room = text[2:] if text.startswith("• ") or text.startswith("  ") else text
+            room = self._extract_room_from_sidebar_text(text)
             self.switch_to_room(room)
         else:
             room = text.replace("(vacía)", "").strip()
@@ -281,7 +319,7 @@ class ChatClient:
             self.rooms_listbox.selection_set(index)
             self.rooms_listbox.activate(index)
             text = self.rooms_listbox.get(index).strip()
-            room = text[2:] if text.startswith("• ") or text.startswith("  ") else text
+            room = self._extract_room_from_sidebar_text(text)
             if room != 'global':
                 self.rooms_menu.tk_popup(event.x_root, event.y_root)
         finally:
@@ -292,7 +330,7 @@ class ChatClient:
         if not sel:
             return
         text = self.rooms_listbox.get(sel[0]).strip()
-        room = text[2:] if text.startswith("• ") or text.startswith("  ") else text
+        room = self._extract_room_from_sidebar_text(text)
         if room == 'global':
             messagebox.showinfo("Info", "No podés salir de la sala global.")
             return
@@ -312,6 +350,9 @@ class ChatClient:
             self.chat_area.insert('end', ln)
         self.chat_area.see('end')
         self.chat_area.configure(state='disabled')
+        self.unread_counts[room] = 0
+        if self.sidebar_mode == 'joined':
+            self.refresh_sidebar()
 
     def on_text_scroll(self, first, last):
         """Callback de yscrollcommand. 'first' y 'last' son fracciones (0.0 - 1.0)."""
@@ -384,6 +425,7 @@ class ChatClient:
             self.current_room = 'global'
             self.visited_rooms = set(['global'])
             self.sidebar_mode = 'joined'
+            self.unread_counts = {'global': 0}
             self.active_room_var.set("Sala activa: global")
             self.load_room_history_initial('global')
             self._append_local(f"[{now_ts()}] Conectado a {host}:{port} como {username}", room='global')
@@ -466,6 +508,7 @@ class ChatClient:
             if room:
                 self.current_room = room
                 self.visited_rooms.add(room)
+                self.unread_counts.setdefault(room, 0)
                 self.active_room_var.set(f"Sala activa: {room}")
                 self.load_room_history_initial(room)
                 self.refresh_sidebar()
@@ -502,9 +545,11 @@ class ChatClient:
                 new_active = 'global'
             self.current_room = new_active
             self.visited_rooms.add(new_active)
+            self.unread_counts.setdefault(new_active, 0)
             if room:
                 self.visited_rooms.discard(room)
                 self.history_index.pop(room, None)
+                self.unread_counts.pop(room, None)
             self.active_room_var.set(f"Sala activa: {new_active}")
             if previous_room != new_active:
                 self.load_room_history_initial(new_active)
@@ -516,6 +561,7 @@ class ChatClient:
         if ("Has vuelto al chat global" in line) or ("No puedes salir del chat global" in line):
             self.current_room = 'global'
             self.visited_rooms.add('global')
+            self.unread_counts.setdefault('global', 0)
             self.active_room_var.set("Sala activa: global")
             self.load_room_history_initial('global')
             self.refresh_sidebar()
@@ -537,7 +583,7 @@ class ChatClient:
 
         # Mensaje típico "usuario: mensaje" (de otros)
         if ':' in line:
-            self._append_local(f"[{now_ts()}] {line}", room=self.current_room)
+            self._append_local(f"[{now_ts()}] {line}", room=self.current_room, notify=True)
             return
 
         # Otros textos informativos
@@ -615,6 +661,7 @@ class ChatClient:
         effective_pwd = pwd if pwd not in (None, '') else stored_pwd
         self.pending_join_room = room
         self.pending_join_password = effective_pwd
+        self.unread_counts.setdefault(room, 0)
         cmd = self._format_join_command(room, effective_pwd)
         if not silent:
             self._append_local(f"[{now_ts()}] Intentando unirse a '{room}'...", room=self.current_room)
@@ -663,15 +710,22 @@ class ChatClient:
         dialog.wait_window()
 
     # ----------------- Guardado / Render de historial -----------------
-    def _append_local(self, text, room=None):
-        """Escribe en histórico (archivo) y muestra en pantalla si es la sala activa."""
+    def _append_local(self, text, room=None, notify=False):
+        """Escribe en histórico y actualiza notificaciones según la sala."""
         room = room or self.current_room
         append_history_line(room, text, self.server_key)
+        self.unread_counts.setdefault(room, 0)
         if room == self.current_room:
             self.chat_area.configure(state='normal')
             self.chat_area.insert('end', text + '\n')
             self.chat_area.see('end')
             self.chat_area.configure(state='disabled')
+        else:
+            self.unread_counts[room] = self.unread_counts.get(room, 0) + 1
+            if self.sidebar_mode == 'joined':
+                self.refresh_sidebar()
+            if notify:
+                self._maybe_notify(room)
 
     # ----------------- Servers combobox -----------------
     def on_server_selected(self, event=None):
