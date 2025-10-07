@@ -18,7 +18,7 @@ import json
 import time
 
 HOST = '0.0.0.0'
-PORT = 50000
+PORT = 55555
 
 clients = {}        # username -> (conn, addr)
 clients_lock = threading.Lock()
