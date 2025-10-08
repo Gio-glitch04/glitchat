@@ -1,0 +1,15 @@
+﻿[2025-10-08 15:28:38] Conectado a 0.tcp.sa.ngrok.io:10911 como gio
+[2025-10-08 15:28:39] ✅ Bienvenido gio. Estás en 'global'.
+[2025-10-08 15:28:46] Tú: hola
+[2025-10-08 15:29:55] Intentando unirse a 'hola'...
+[2025-10-08 15:34:24] Conectado a 0.tcp.sa.ngrok.io:10911 como gio
+[2025-10-08 15:34:24] ✅ Bienvenido gio. Estás en 'global'.
+[2025-10-08 15:41:00] Conectado a 0.tcp.sa.ngrok.io:10911 como gio
+[2025-10-08 15:41:00] ✅ Bienvenido gio. Estás en 'global'.
+[2025-10-08 15:41:06] Salas públicas disponibles: global, hola (vacía)
+[2025-10-08 15:41:09] Salas públicas disponibles: global, hola (vacía)
+[2025-10-08 15:41:15] Intentando unirse a 'hola'...
+[2025-10-08 15:41:20] Has salido de la sala 'hola'. Sala activa: global.
+[2025-10-08 15:41:24] Salas públicas disponibles: global, hola (vacía)
+[2025-10-08 15:41:24] Salas públicas disponibles: global, hola (vacía)
+[2025-10-08 15:41:32] Intentando unirse a 'hola'...

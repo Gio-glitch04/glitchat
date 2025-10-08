@@ -75,28 +75,28 @@ namespace ChatClient
             // 
             // serverTextBox
             // 
-            this.serverTextBox.Location = new System.Drawing.Point(69, 12);
+            this.serverTextBox.Location = new System.Drawing.Point(64, 16);
             this.serverTextBox.Name = "serverTextBox";
             this.serverTextBox.Size = new System.Drawing.Size(125, 20);
             this.serverTextBox.TabIndex = 1;
             // 
             // portTextBox
             // 
-            this.portTextBox.Location = new System.Drawing.Point(236, 12);
+            this.portTextBox.Location = new System.Drawing.Point(248, 16);
             this.portTextBox.Name = "portTextBox";
             this.portTextBox.Size = new System.Drawing.Size(60, 20);
             this.portTextBox.TabIndex = 3;
             // 
             // userTextBox
             // 
-            this.userTextBox.Location = new System.Drawing.Point(348, 12);
+            this.userTextBox.Location = new System.Drawing.Point(360, 16);
             this.userTextBox.Name = "userTextBox";
             this.userTextBox.Size = new System.Drawing.Size(140, 20);
             this.userTextBox.TabIndex = 5;
             // 
             // connectButton
             // 
-            this.connectButton.Location = new System.Drawing.Point(502, 10);
+            this.connectButton.Location = new System.Drawing.Point(512, 16);
             this.connectButton.Name = "connectButton";
             this.connectButton.Size = new System.Drawing.Size(86, 23);
             this.connectButton.TabIndex = 6;
@@ -108,7 +108,7 @@ namespace ChatClient
             // 
             this.serversComboBox.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.serversComboBox.FormattingEnabled = true;
-            this.serversComboBox.Location = new System.Drawing.Point(670, 11);
+            this.serversComboBox.Location = new System.Drawing.Point(672, 16);
             this.serversComboBox.Name = "serversComboBox";
             this.serversComboBox.Size = new System.Drawing.Size(160, 21);
             this.serversComboBox.TabIndex = 9;
@@ -116,7 +116,7 @@ namespace ChatClient
             // 
             // saveServerButton
             // 
-            this.saveServerButton.Location = new System.Drawing.Point(836, 10);
+            this.saveServerButton.Location = new System.Drawing.Point(848, 16);
             this.saveServerButton.Name = "saveServerButton";
             this.saveServerButton.Size = new System.Drawing.Size(126, 23);
             this.saveServerButton.TabIndex = 10;
@@ -134,7 +134,7 @@ namespace ChatClient
             this.roomsListBox.IntegralHeight = false;
             this.roomsListBox.Location = new System.Drawing.Point(15, 44);
             this.roomsListBox.Name = "roomsListBox";
-            this.roomsListBox.Size = new System.Drawing.Size(210, 364);
+            this.roomsListBox.Size = new System.Drawing.Size(210, 365);
             this.roomsListBox.TabIndex = 2;
             this.roomsListBox.DrawItem += new System.Windows.Forms.DrawItemEventHandler(this.RoomsListBox_DrawItem);
             this.roomsListBox.DoubleClick += new System.EventHandler(this.RoomsListBox_DoubleClick);
@@ -145,13 +145,13 @@ namespace ChatClient
             this.roomsContextMenu.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.leaveRoomMenuItem});
             this.roomsContextMenu.Name = "roomsContextMenu";
-            this.roomsContextMenu.Size = new System.Drawing.Size(162, 26);
+            this.roomsContextMenu.Size = new System.Drawing.Size(148, 26);
             this.roomsContextMenu.Opening += new System.ComponentModel.CancelEventHandler(this.RoomsContextMenu_Opening);
             // 
             // leaveRoomMenuItem
             // 
             this.leaveRoomMenuItem.Name = "leaveRoomMenuItem";
-            this.leaveRoomMenuItem.Size = new System.Drawing.Size(161, 22);
+            this.leaveRoomMenuItem.Size = new System.Drawing.Size(147, 22);
             this.leaveRoomMenuItem.Text = "Salir de la sala";
             this.leaveRoomMenuItem.Click += new System.EventHandler(this.LeaveRoomMenuItem_Click);
             // 
@@ -160,7 +160,7 @@ namespace ChatClient
             this.sidebarTitleLabel.AutoSize = true;
             this.sidebarTitleLabel.Location = new System.Drawing.Point(12, 20);
             this.sidebarTitleLabel.Name = "sidebarTitleLabel";
-            this.sidebarTitleLabel.Size = new System.Drawing.Size(187, 13);
+            this.sidebarTitleLabel.Size = new System.Drawing.Size(146, 13);
             this.sidebarTitleLabel.TabIndex = 1;
             this.sidebarTitleLabel.Text = "Salas (doble clic para activar)";
             // 
@@ -188,7 +188,7 @@ namespace ChatClient
             // 
             this.createJoinButton.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.createJoinButton.Location = new System.Drawing.Point(15, 452);
+            this.createJoinButton.Location = new System.Drawing.Point(15, 453);
             this.createJoinButton.Name = "createJoinButton";
             this.createJoinButton.Size = new System.Drawing.Size(210, 30);
             this.createJoinButton.TabIndex = 5;
@@ -214,7 +214,7 @@ namespace ChatClient
             this.chatRichTextBox.Location = new System.Drawing.Point(15, 35);
             this.chatRichTextBox.Name = "chatRichTextBox";
             this.chatRichTextBox.ReadOnly = true;
-            this.chatRichTextBox.Size = new System.Drawing.Size(673, 409);
+            this.chatRichTextBox.Size = new System.Drawing.Size(724, 410);
             this.chatRichTextBox.TabIndex = 1;
             this.chatRichTextBox.Text = "";
             this.chatRichTextBox.VScroll += new System.EventHandler(this.ChatRichTextBox_VScroll);
@@ -225,7 +225,7 @@ namespace ChatClient
             | System.Windows.Forms.AnchorStyles.Right)));
             this.messageTextBox.Location = new System.Drawing.Point(15, 10);
             this.messageTextBox.Name = "messageTextBox";
-            this.messageTextBox.Size = new System.Drawing.Size(583, 20);
+            this.messageTextBox.Size = new System.Drawing.Size(634, 20);
             this.messageTextBox.TabIndex = 0;
             this.messageTextBox.KeyDown += new System.Windows.Forms.KeyEventHandler(this.MessageTextBox_KeyDown);
             // 
@@ -233,7 +233,7 @@ namespace ChatClient
             // 
             this.sendButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.sendButton.Enabled = false;
-            this.sendButton.Location = new System.Drawing.Point(604, 8);
+            this.sendButton.Location = new System.Drawing.Point(655, 8);
             this.sendButton.Name = "sendButton";
             this.sendButton.Size = new System.Drawing.Size(84, 23);
             this.sendButton.TabIndex = 1;
@@ -244,25 +244,25 @@ namespace ChatClient
             // labelServer
             // 
             this.labelServer.AutoSize = true;
-            this.labelServer.Location = new System.Drawing.Point(12, 15);
+            this.labelServer.Location = new System.Drawing.Point(8, 16);
             this.labelServer.Name = "labelServer";
-            this.labelServer.Size = new System.Drawing.Size(51, 13);
+            this.labelServer.Size = new System.Drawing.Size(49, 13);
             this.labelServer.TabIndex = 0;
             this.labelServer.Text = "Servidor:";
             // 
             // labelPort
             // 
             this.labelPort.AutoSize = true;
-            this.labelPort.Location = new System.Drawing.Point(200, 15);
+            this.labelPort.Location = new System.Drawing.Point(200, 16);
             this.labelPort.Name = "labelPort";
-            this.labelPort.Size = new System.Drawing.Size(38, 13);
+            this.labelPort.Size = new System.Drawing.Size(41, 13);
             this.labelPort.TabIndex = 2;
             this.labelPort.Text = "Puerto:";
             // 
             // labelUser
             // 
             this.labelUser.AutoSize = true;
-            this.labelUser.Location = new System.Drawing.Point(302, 15);
+            this.labelUser.Location = new System.Drawing.Point(312, 16);
             this.labelUser.Name = "labelUser";
             this.labelUser.Size = new System.Drawing.Size(46, 13);
             this.labelUser.TabIndex = 4;
@@ -271,9 +271,9 @@ namespace ChatClient
             // labelRecent
             // 
             this.labelRecent.AutoSize = true;
-            this.labelRecent.Location = new System.Drawing.Point(594, 15);
+            this.labelRecent.Location = new System.Drawing.Point(608, 16);
             this.labelRecent.Name = "labelRecent";
-            this.labelRecent.Size = new System.Drawing.Size(52, 13);
+            this.labelRecent.Size = new System.Drawing.Size(58, 13);
             this.labelRecent.TabIndex = 8;
             this.labelRecent.Text = "Recientes:";
             // 
@@ -287,7 +287,7 @@ namespace ChatClient
             this.sidebarPanel.Dock = System.Windows.Forms.DockStyle.Left;
             this.sidebarPanel.Location = new System.Drawing.Point(0, 50);
             this.sidebarPanel.Name = "sidebarPanel";
-            this.sidebarPanel.Size = new System.Drawing.Size(240, 500);
+            this.sidebarPanel.Size = new System.Drawing.Size(240, 501);
             this.sidebarPanel.TabIndex = 1;
             // 
             // mainPanel
@@ -297,7 +297,7 @@ namespace ChatClient
             this.mainPanel.Dock = System.Windows.Forms.DockStyle.Fill;
             this.mainPanel.Location = new System.Drawing.Point(240, 50);
             this.mainPanel.Name = "mainPanel";
-            this.mainPanel.Size = new System.Drawing.Size(703, 440);
+            this.mainPanel.Size = new System.Drawing.Size(754, 441);
             this.mainPanel.TabIndex = 2;
             // 
             // topPanel
@@ -315,7 +315,7 @@ namespace ChatClient
             this.topPanel.Dock = System.Windows.Forms.DockStyle.Top;
             this.topPanel.Location = new System.Drawing.Point(0, 0);
             this.topPanel.Name = "topPanel";
-            this.topPanel.Size = new System.Drawing.Size(943, 50);
+            this.topPanel.Size = new System.Drawing.Size(994, 50);
             this.topPanel.TabIndex = 0;
             // 
             // bottomPanel
@@ -323,16 +323,16 @@ namespace ChatClient
             this.bottomPanel.Controls.Add(this.messageTextBox);
             this.bottomPanel.Controls.Add(this.sendButton);
             this.bottomPanel.Dock = System.Windows.Forms.DockStyle.Bottom;
-            this.bottomPanel.Location = new System.Drawing.Point(240, 490);
+            this.bottomPanel.Location = new System.Drawing.Point(240, 491);
             this.bottomPanel.Name = "bottomPanel";
-            this.bottomPanel.Size = new System.Drawing.Size(703, 60);
+            this.bottomPanel.Size = new System.Drawing.Size(754, 60);
             this.bottomPanel.TabIndex = 3;
             // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(943, 550);
+            this.ClientSize = new System.Drawing.Size(994, 551);
             this.Controls.Add(this.mainPanel);
             this.Controls.Add(this.bottomPanel);
             this.Controls.Add(this.sidebarPanel);

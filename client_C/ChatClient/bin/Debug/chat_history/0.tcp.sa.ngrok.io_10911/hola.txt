@@ -1,0 +1,5 @@
+﻿[2025-10-08 15:29:55] ✅ Te has unido a la sala 'hola'.
+[Sistema] Comando desconocido.
+[2025-10-08 15:41:15] ✅ Te has unido a la sala 'hola'.
+[2025-10-08 15:41:17] Salas públicas disponibles: global, hola
+[2025-10-08 15:41:32] ✅ Te has unido a la sala 'hola'.

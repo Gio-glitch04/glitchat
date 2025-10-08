@@ -1,0 +1,9 @@
+C:\Users\gpiaz\OneDrive\Documents\2025\Redes de Datos\Mensajeria-Desktop\glitchat\client_C\ChatClient\bin\Debug\ChatClient.exe.config
+C:\Users\gpiaz\OneDrive\Documents\2025\Redes de Datos\Mensajeria-Desktop\glitchat\client_C\ChatClient\bin\Debug\ChatClient.exe
+C:\Users\gpiaz\OneDrive\Documents\2025\Redes de Datos\Mensajeria-Desktop\glitchat\client_C\ChatClient\bin\Debug\ChatClient.pdb
+C:\Users\gpiaz\OneDrive\Documents\2025\Redes de Datos\Mensajeria-Desktop\glitchat\client_C\ChatClient\obj\Debug\ChatClient.csproj.AssemblyReference.cache
+C:\Users\gpiaz\OneDrive\Documents\2025\Redes de Datos\Mensajeria-Desktop\glitchat\client_C\ChatClient\obj\Debug\ChatClient.csproj.CoreCompileInputs.cache
+C:\Users\gpiaz\OneDrive\Documents\2025\Redes de Datos\Mensajeria-Desktop\glitchat\client_C\ChatClient\obj\Debug\ChatClient.exe
+C:\Users\gpiaz\OneDrive\Documents\2025\Redes de Datos\Mensajeria-Desktop\glitchat\client_C\ChatClient\obj\Debug\ChatClient.pdb
+C:\Users\gpiaz\OneDrive\Documents\2025\Redes de Datos\Mensajeria-Desktop\glitchat\client_C\ChatClient\obj\Debug\ChatClient.MainForm.resources
+C:\Users\gpiaz\OneDrive\Documents\2025\Redes de Datos\Mensajeria-Desktop\glitchat\client_C\ChatClient\obj\Debug\ChatClient.csproj.GenerateResource.cache
