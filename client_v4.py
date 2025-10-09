@@ -430,10 +430,10 @@ class ChatClient:
     def process_server_line(self, line: str):
         """
         El servidor envía:
-         - System/confirmaciones (ej: "✅ Te has unido a la sala 'x'.")
+         - System/confirmaciones (ej: "Te has unido a la sala 'x'.")
          - Listado /rooms: "Salas públicas disponibles: a, b (vacía), c"
          - Mensajes de otros: "usuario: mensaje"
-         - Contraseña incorrecta: "❌ Contraseña incorrecta."
+         - Contraseña incorrecta: "Contraseña incorrecta."
         """
         # /rooms -> lista pública
         if line.lower().startswith("salas públicas disponibles"):
